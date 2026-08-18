@@ -311,6 +311,27 @@
     color:var(--blueprint-dim); font-family:'JetBrains Mono', monospace; font-size:12px; text-align:center;
     overflow:hidden; position:relative;
   }
+
+  .media-slot iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+  }
+
+  /* Google Drive / YouTube embeds carry their own letterboxing when the
+     iframe's internal aspect ratio doesn't match the slot — scale up and
+     crop the overflow so the video fills the frame edge-to-edge. */
+  .media-slot.drive-slot iframe,
+  .media-slot.youtube-slot iframe {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 145%;
+    height: 145%;
+    transform: translate(-50%, -50%);
+  }
+
   .media-slot img, .media-slot video{width:100%; height:100%; object-fit:cover; display:block;}
   .media-slot .icon{font-size:22px;}
 
@@ -593,7 +614,7 @@ const projects = [
     ],
     stack: ["HTML/CSS", "PHP", "MySQLi", "JavaScript", "Chart.js", "PHPMailer"],
     media: [
-      { type: "video", src: "../Francia-Portfolio-main/WRS.mp4"},
+      { type: "drive", src: "126gEfRzl6811YC3_UXqZ32aJGPOZE-Y5" },
       { type: "image", src: "../Francia-Portfolio-main/WRS-page.png"},
       { type: "image", src: "../Francia-Portfolio-main/requestor.png"},
       { type: "image", src: "../Francia-Portfolio-main/peadmin.png", alt: "Admin Dashboard screenshot" },
@@ -614,7 +635,7 @@ const projects = [
     ],
     stack: ["PHP", "MySQL", "JavaScript"],
     media: [
-      { type: "video", src: "../Francia-Portfolio-main/vaccine.mp4" },
+      { type: "drive", src: "1Kd1bC_uiY5F9r9PzZI3ZFOWNu7WqD_Pp" },
       { type: "image", src: "../Francia-Portfolio-main/vaccine-admin.png", alt: "Dashboard screenshot" },
       { type: "image", src: "../Francia-Portfolio-main/vaccine-user.png", alt: "Analytics screenshot" }
     ]
@@ -633,7 +654,7 @@ const projects = [
     ],
     stack: ["HTML/CSS", "JavaScript", "PHP"],
     media: [
-      { type: "video", src: "../Francia-Portfolio-main/furniture.mp4" },
+      { type: "drive", src: "11aYqy2LKpLVNvfMk3hFi7xlLXLYJOWKd" },
       { type: "image", src: "../Francia-Portfolio-main/woodenpage.png", alt: "Dashboard screenshot" },
       { type: "image", src: "../Francia-Portfolio-main/furn-about.png", alt: "Analytics screenshot" },
       { type: "image", src: "../Francia-Portfolio-main/furn-categ.png", alt: "Analytics screenshot" },
@@ -655,7 +676,7 @@ const projects = [
     ],
     stack: ["JavaScript", "HTML5", "CSS"],
     media: [
-      { type: "video", src: "../Francia-Portfolio-main/flipt-it.mp4" },
+      { type: "drive", src: "1PHEKQpWvCM75tbTdFGjR2i7VaZxkRUVR" },
       { type: "image", src: "../Francia-Portfolio-main/app.jpg", alt: "Game screenshot" }
     ]
   }
@@ -736,12 +757,35 @@ function openModal(i) {
       </div>`;
     }
     if (m.type === 'video') {
-      return `<div class="media-slot has-media" data-type="video" data-src="${m.src}">
-        <video src="${m.src}" controls></video>
+      return `<div class="media-slot has-media" data-type="video" data-src="${m.src}" data-alt="${m.alt || p.title + ' video'}">
+        <video src="${m.src}" muted playsinline></video>
         <span class="expand-hint">⤢ View larger</span>
       </div>`;
     }
-    return `<div class="media-slot"><span class="icon">▭</span><span>${m.label}</span></div>`;
+    if (m.type === 'youtube') {
+      return `<div class="media-slot youtube-slot" data-type="youtube" data-src="${m.src}">
+        <iframe
+          src="https://www.youtube.com/embed/${m.src}"
+          title="${p.title} video"
+          frameborder="0"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowfullscreen>
+        </iframe>
+      </div>`;
+    }
+    if (m.type === 'drive') {
+      return `<div class="media-slot drive-slot has-media" data-type="drive" data-src="${m.src}">
+        <iframe
+          src="https://drive.google.com/file/d/${m.src}/preview"
+          title="${p.title} video"
+          frameborder="0"
+          allow="autoplay; encrypted-media"
+          allowfullscreen>
+        </iframe>
+        <span class="expand-hint">⤢ View larger</span>
+      </div>`;
+    }
+    return `<div class="media-slot"><span class="icon">▭</span><span>${m.label || ''}</span></div>`;
   }).join('');
 
   document.querySelectorAll('#modal-media .media-slot.has-media').forEach(slot => {
@@ -770,9 +814,20 @@ const lightboxBackdrop = document.getElementById('lightbox-backdrop');
 const lightboxContent = document.getElementById('lightbox-content');
 
 function openLightbox(type, src, alt) {
-  lightboxContent.innerHTML = type === 'video'
-    ? `<video src="${src}" controls autoplay></video>`
-    : `<img src="${src}" alt="${alt || ''}">`;
+  if (type === 'drive') {
+    lightboxContent.innerHTML = `<div style="position:relative; width:80vw; height:80vh; max-width:1000px; overflow:hidden; border-radius:3px;">
+      <iframe
+        src="https://drive.google.com/file/d/${src}/preview"
+        allow="autoplay; encrypted-media"
+        allowfullscreen
+        style="position:absolute; top:50%; left:50%; width:115%; height:115%; transform:translate(-50%, -50%); border:0;">
+      </iframe>
+    </div>`;
+  } else {
+    lightboxContent.innerHTML = type === 'video'
+      ? `<video src="${src}" controls autoplay></video>`
+      : `<img src="${src}" alt="${alt || ''}">`;
+  }
   lightboxBackdrop.classList.add('open');
 }
 
